@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harvest Table: Fruit & Vegetable Guide</title>
+<meta name="description" content="Search over 130 fruits and vegetables, see calories and nutrition per 100 g, and build your plate with the calorie calculator.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥝</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08110c; --bg2:#0d1a13; --card:#12221a; --card2:#172b21; --line:rgba(255,255,255,.09);
+  --ink:#f1f7ee; --mute:#9db3a4; --lime:#b9f56b; --lime-ink:#10200a; --orange:#ff9a3d; --pink:#ff5f8f; --sky:#62d2ff; --violet:#b596ff;
+  --shadow:0 20px 50px -20px rgba(0,0,0,.7); --nav:rgba(8,17,12,.72);
+  --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"DM Sans",system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.34,1.56,.64,1);
+}
+[data-theme="light"]{
+  --bg:#f5f2e7; --bg2:#ece8d9; --card:#fffdf6; --card2:#f4f0e2; --line:rgba(20,40,25,.12);
+  --ink:#13261a; --mute:#5c7163; --lime:#3f9d1f; --lime-ink:#ffffff; --orange:#e0701a; --pink:#e0356b; --sky:#1787c2; --violet:#6c4bd8;
+  --shadow:0 20px 45px -22px rgba(30,60,35,.35); --nav:rgba(245,242,231,.78);
+}
+*{box-sizing:border-box;margin:0}
+html{overflow-x:clip;scroll-behavior:smooth;scroll-padding-top:80px}
+body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.5;overflow-x:hidden;transition:background .5s,color .5s;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+img{display:block;max-width:100%}
+h1,h2,h3{font-family:var(--display);line-height:1.02;letter-spacing:-.02em}
+.wrap{width:min(1240px,100% - 40px);margin-inline:auto}
+::selection{background:var(--lime);color:var(--lime-ink)}
+
+/* ---------- loader ---------- */
+#loader{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;transition:opacity .6s,visibility .6s}
+#loader.done{opacity:0;visibility:hidden}
+#loader div{display:flex;gap:14px;font-size:44px}
+#loader span{animation:hop .9s var(--ease) infinite}
+#loader span:nth-child(2){animation-delay:.12s}#loader span:nth-child(3){animation-delay:.24s}#loader span:nth-child(4){animation-delay:.36s}
+@keyframes hop{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(-26px) scale(1.15) rotate(12deg)}}
+
+/* ---------- nav ---------- */
+#progress{position:fixed;top:0;left:0;height:3px;width:100%;z-index:120;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,var(--lime),var(--orange),var(--pink))}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:66px;background:var(--nav);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border-bottom:1px solid transparent;transition:border-color .3s,background .5s}
+nav.scrolled{border-color:var(--line)}
+nav .wrap{height:100%;display:flex;align-items:center;gap:26px}
+.logo{font-family:var(--display);font-weight:800;font-size:21px;display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit}
+.logo i{font-style:normal;display:inline-block;animation:sway 4s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(12deg)}}
+.links{margin-left:auto;display:flex;gap:4px}
+.links a{color:var(--mute);text-decoration:none;font-weight:500;font-size:15px;padding:8px 13px;border-radius:99px;transition:color .2s,background .2s}
+.links a:hover{color:var(--ink);background:var(--line)}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:17px;transition:transform .5s var(--spring),background .2s}
+.icon-btn:hover{transform:rotate(40deg) scale(1.08);background:var(--line)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;padding:11px 20px;border-radius:99px;background:var(--lime);color:var(--lime-ink);position:relative;overflow:hidden;transition:transform .35s var(--spring),box-shadow .3s;white-space:nowrap}
+.btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 10px 30px -8px var(--lime)}
+.btn:active{transform:scale(.96)}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s}
+.btn:hover::after{transform:translateX(120%)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{box-shadow:none;background:var(--line)}
+.btn.big{padding:15px 28px;font-size:17px}
+#loginBtn .av{width:24px;height:24px;border-radius:50%;background:var(--lime-ink);color:var(--lime);display:grid;place-items:center;font-size:12px;font-weight:800;margin-left:-8px}
+
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:100vh;padding:130px 0 70px;display:flex;align-items:center;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;pointer-events:none;animation:drift 18s ease-in-out infinite alternate}
+.b1{width:520px;height:520px;background:var(--lime);top:-160px;left:-140px;opacity:.28}
+.b2{width:460px;height:460px;background:var(--orange);bottom:-180px;right:8%;opacity:.3;animation-duration:23s;animation-delay:-6s}
+.b3{width:380px;height:380px;background:var(--pink);top:18%;right:-120px;opacity:.26;animation-duration:27s;animation-delay:-12s}
+@keyframes drift{to{transform:translate(90px,70px) scale(1.25)}}
+#spot{position:absolute;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(185,245,107,.16),transparent 62%);pointer-events:none;transform:translate(-50%,-50%);left:50%;top:40%;transition:left .5s var(--ease),top .5s var(--ease)}
+.hero .wrap{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1px solid var(--line);border-radius:99px;font-size:13.5px;font-weight:600;color:var(--mute);background:var(--card);animation:up .8s var(--ease) .2s both}
+.pill b{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 var(--lime);animation:ping 1.8s infinite}
+@keyframes ping{to{box-shadow:0 0 0 12px transparent}}
+h1{font-size:clamp(46px,7.4vw,104px);font-weight:800;margin:22px 0 22px}
+h1 .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em}
+h1 .w span{display:inline-block;transform:translateY(110%) rotate(6deg);animation:rise .9s var(--ease) forwards}
+@keyframes rise{to{transform:none}}
+.grad{background:linear-gradient(90deg,var(--lime),var(--orange),var(--pink),var(--violet),var(--lime));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rise .9s var(--ease) forwards,flow 7s linear infinite!important}
+@keyframes flow{to{background-position:300% 0}}
+.lead{font-size:clamp(17px,1.6vw,20px);color:var(--mute);max-width:520px;animation:up .9s var(--ease) .7s both}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px;animation:up .9s var(--ease) .85s both}
+@keyframes up{from{opacity:0;transform:translateY(24px)}}
+.stats{display:flex;gap:34px;margin-top:46px;animation:up .9s var(--ease) 1s both}
+.stats b{font-family:var(--display);font-size:38px;font-weight:800;display:block;line-height:1}
+.stats span{font-size:13.5px;color:var(--mute)}
+
+.orbit{position:relative;aspect-ratio:1;width:min(100%,520px);margin-inline:auto;animation:pop 1.1s var(--spring) .5s both}
+@keyframes pop{from{opacity:0;transform:scale(.6) rotate(-20deg)}}
+.orbit .ring{position:absolute;inset:11%;border-radius:50%;border:1.5px dashed var(--line);animation:spin 46s linear infinite}
+.orbit .ring.r2{inset:27%;animation-duration:32s;animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bub{position:absolute;width:23%;aspect-ratio:1;border-radius:50%;left:50%;top:50%;margin:-11.5% 0 0 -11.5%;transform:rotate(var(--a)) translateY(-217%) rotate(calc(var(--a) * -1))}
+.r2 .bub{width:30%;margin:-15% 0 0 -15%;transform:rotate(var(--a)) translateY(-167%) rotate(calc(var(--a) * -1))}
+.bub>div,.core{border-radius:50%;overflow:hidden;background:var(--card2);box-shadow:var(--shadow),0 0 0 4px var(--bg),0 0 0 5px var(--line);display:grid;place-items:center;font-size:34px}
+.bub>div{width:100%;height:100%;animation:spin 46s linear infinite reverse}
+.r2 .bub>div{animation-duration:32s;animation-direction:normal}
+.bub img,.core img{width:100%;height:100%;object-fit:cover;grid-area:1/1;opacity:0;transition:opacity .8s}
+.bub img.ld,.core img.ld{opacity:1}
+.bub span,.core span{grid-area:1/1}
+.core{position:absolute;inset:39%;font-size:60px;animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.07)}}
+.float{position:absolute;font-size:var(--s,40px);pointer-events:none;filter:drop-shadow(0 12px 14px rgba(0,0,0,.35));animation:bob var(--t,6s) ease-in-out infinite;will-change:transform}
+.float i{font-style:normal;display:block;transition:transform .6s var(--ease)}
+@keyframes bob{50%{transform:translateY(-22px) rotate(14deg)}}
+.scrolldown{position:absolute;bottom:22px;left:50%;width:26px;height:42px;margin-left:-13px;border:2px solid var(--line);border-radius:14px}
+.scrolldown::after{content:"";position:absolute;left:50%;top:7px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:var(--lime);animation:wheel 1.6s infinite}
+@keyframes wheel{to{transform:translateY(14px);opacity:0}}
+
+/* ---------- marquee ---------- */
+.marquee{border-block:1px solid var(--line);background:var(--bg2);overflow:hidden;padding:16px 0;transform:rotate(-1.2deg) scale(1.03)}
+.marquee div{display:flex;gap:38px;width:max-content;animation:slide 60s linear infinite;font-family:var(--display);font-weight:700;font-size:22px;white-space:nowrap}
+.marquee:hover div{animation-play-state:paused}
+.marquee em{font-style:normal;color:var(--mute)}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+/* ---------- sections ---------- */
+section{padding:100px 0}
+.head{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap;margin-bottom:30px}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
+h2{font-size:clamp(36px,5vw,64px);font-weight:800;margin-top:10px}
+.sub{color:var(--mute);max-width:520px;font-size:16.5px}
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+
+/* ---------- toolbar ---------- */
+.toolbar{position:sticky;top:66px;z-index:50;padding:14px 0;margin-bottom:22px;background:linear-gradient(var(--bg) 70%,transparent)}
+.search{position:relative;display:flex;align-items:center}
+.search input{width:100%;padding:18px 110px 18px 56px;font-size:18px;border-radius:20px;border:1.5px solid var(--line);background:var(--card);outline:0;transition:border-color .3s,box-shadow .3s,transform .3s var(--ease)}
+.search input:focus{border-color:var(--lime);box-shadow:0 0 0 6px color-mix(in srgb,var(--lime) 18%,transparent);transform:scale(1.006)}
+.search input::placeholder{color:var(--mute)}
+.search svg{position:absolute;left:20px;width:22px;height:22px;stroke:var(--mute);transition:stroke .3s,transform .5s var(--spring)}
+.search:focus-within svg{stroke:var(--lime);transform:rotate(90deg) scale(1.1)}
+.search kbd,.search .clear{position:absolute;right:16px;font:600 12px var(--body);color:var(--mute);border:1px solid var(--line);border-radius:8px;padding:4px 9px}
+.search .clear{display:none;background:var(--card2)}
+.search.has kbd{display:none}.search.has .clear{display:block}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.chip{padding:8px 15px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-weight:600;font-size:14px;color:var(--mute);transition:all .3s var(--spring)}
+.chip:hover{color:var(--ink);transform:translateY(-2px)}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink);transform:scale(1.05)}
+.filters select{margin-left:auto;padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-weight:600;font-size:14px;outline:0}
+.filters select option{background:var(--card);color:var(--ink)}
+#count{font-size:14px;color:var(--mute);margin-left:6px}
+
+/* ---------- cards ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;perspective:1400px}
+.card{opacity:0;transform:translateY(46px) scale(.94);transition:opacity .7s var(--ease) var(--d,0ms),transform .7s var(--ease) var(--d,0ms)}
+.card.in{opacity:1;transform:none}
+.ci{position:relative;height:100%;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:24px;overflow:hidden;cursor:pointer;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .5s var(--ease),box-shadow .4s,border-color .3s;transform-style:preserve-3d}
+.card:hover .ci{box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--c) 60%,transparent);transition:transform .08s linear,box-shadow .4s,border-color .3s}
+.ci::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(360px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.16),transparent 55%)}
+.card:hover .ci::before{opacity:1}
+.ph{position:relative;aspect-ratio:4/3;overflow:hidden;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 55%,var(--card)),color-mix(in srgb,var(--c) 15%,var(--card)));display:grid;place-items:center}
+.ph .emo{font-size:74px;filter:drop-shadow(0 10px 12px rgba(0,0,0,.25));transition:transform .6s var(--spring)}
+.card:hover .emo{transform:scale(1.2) rotate(-10deg)}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.15);transition:opacity .8s,transform 1.2s var(--ease)}
+.ph img.ld{opacity:1;transform:scale(1.02)}
+.card:hover .ph img.ld{transform:scale(1.14)}
+.ph::after{content:"";position:absolute;inset:auto 0 0 0;height:55%;background:linear-gradient(transparent,rgba(0,0,0,.55));pointer-events:none}
+.tag-t,.tag-r{position:absolute;top:12px;left:12px;z-index:2;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:5px 10px;border-radius:99px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(8px)}
+.tag-r{left:auto;right:56px;background:#ffd24a;color:#3b2a00}
+.fav{position:absolute;top:8px;right:8px;z-index:4;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:17px;display:grid;place-items:center;backdrop-filter:blur(8px);transition:transform .4s var(--spring),background .3s}
+.fav:hover{transform:scale(1.18)}
+.fav.on{background:var(--pink);animation:heart .5s var(--spring)}
+@keyframes heart{0%{transform:scale(.5)}60%{transform:scale(1.4)}}
+.kc{position:absolute;left:14px;bottom:10px;z-index:2;color:#fff;font-family:var(--display);font-weight:800;font-size:34px;line-height:1;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.kc small{font:600 12px var(--body);opacity:.9;margin-left:4px}
+.cb{padding:16px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
+.cb h3{font-size:22px;font-weight:700}
+.cb p{font-size:14px;color:var(--mute);min-height:42px}
+.mac{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.mac div{background:var(--card2);border-radius:12px;padding:7px 4px;text-align:center;font-size:11px;color:var(--mute)}
+.mac b{display:block;font-size:14px;color:var(--ink)}
+.uses{display:flex;gap:6px;flex-wrap:wrap}
+.uses span{font-size:12px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--mute)}
+.add{margin-top:auto;padding:11px;border-radius:14px;font-weight:700;font-size:14.5px;background:color-mix(in srgb,var(--lime) 14%,transparent);color:var(--lime);transition:all .3s var(--spring)}
+.add:hover{background:var(--lime);color:var(--lime-ink);transform:translateY(-2px)}
+.add.ok{background:var(--lime);color:var(--lime-ink);animation:heart .45s var(--spring)}
+.empty{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--mute)}
+.empty div{font-size:70px;animation:bob 3s ease-in-out infinite}
+
+/* ---------- calculator ---------- */
+#calc{background:var(--bg2);border-block:1px solid var(--line);position:relative;overflow:hidden}
+.calc{display:grid;grid-template-columns:1.15fr .85fr;gap:24px;align-items:start}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:26px}
+.panel h3{font-size:24px;margin-bottom:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.field{position:relative;flex:1;min-width:150px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--mute);margin-bottom:6px}
+.inp{width:100%;padding:13px 15px;border-radius:14px;border:1.5px solid var(--line);background:var(--card2);outline:0;transition:border-color .3s,box-shadow .3s}
+.inp:focus{border-color:var(--lime);box-shadow:0 0 0 5px color-mix(in srgb,var(--lime) 16%,transparent)}
+#pickList{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:20;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;display:none;max-height:300px;overflow-y:auto}
+#pickList.open{display:block;animation:drop .3s var(--ease)}
+@keyframes drop{from{opacity:0;transform:translateY(-8px) scale(.98)}}
+#pickList button{display:flex;width:100%;gap:10px;align-items:center;padding:10px 14px;text-align:left;font-size:15px}
+#pickList button:hover,#pickList button.hi{background:var(--card2)}
+#pickList small{margin-left:auto;color:var(--mute)}
+.quick{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.quick button{font-size:13px;font-weight:600;padding:6px 12px;border-radius:99px;border:1px solid var(--line);color:var(--mute);transition:all .25s var(--spring)}
+.quick button:hover{color:var(--lime);border-color:var(--lime);transform:translateY(-2px)}
+#plate{margin-top:20px;display:flex;flex-direction:column;gap:8px}
+.pl{display:grid;grid-template-columns:46px 1fr 96px 84px 34px;gap:10px;align-items:center;padding:8px;border-radius:16px;background:var(--card2);animation:slidein .5s var(--spring)}
+.pl.out{animation:slideout .3s var(--ease) forwards}
+@keyframes slidein{from{opacity:0;transform:translateX(-30px) scale(.95)}}
+@keyframes slideout{to{opacity:0;transform:translateX(40px) scale(.9)}}
+.pl .th{width:46px;height:46px;border-radius:12px;overflow:hidden;background:var(--card);display:grid;place-items:center;font-size:24px}
+.pl .th img{width:100%;height:100%;object-fit:cover}
+.pl b{font-size:15px}.pl small{display:block;color:var(--mute);font-size:12px}
+.pl input{width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);outline:0;text-align:right}
+.pl .k{text-align:right;font-weight:700;font-family:var(--display);font-size:17px}
+.pl .x{width:30px;height:30px;border-radius:50%;color:var(--mute);transition:all .3s var(--spring)}
+.pl .x:hover{background:var(--pink);color:#fff;transform:rotate(90deg)}
+.noplate{text-align:center;color:var(--mute);padding:34px 10px;border:1.5px dashed var(--line);border-radius:18px}
+.noplate div{font-size:44px;animation:bob 3.4s ease-in-out infinite}
+.sum{position:sticky;top:90px}
+.ringbox{position:relative;width:210px;margin:6px auto 18px}
+.ringbox svg{width:100%;transform:rotate(-90deg)}
+.ringbox circle{fill:none;stroke-width:12;stroke-linecap:round}
+.ringbox .tr{stroke:color-mix(in srgb,var(--ink) 10%,transparent)}
+.ringbox .fg{stroke:url(#rg);stroke-dasharray:339.3;stroke-dashoffset:339.3;transition:stroke-dashoffset 1s var(--ease)}
+.ringbox .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ringbox .mid b{font-family:var(--display);font-size:46px;font-weight:800;line-height:1}
+.ringbox .mid span{font-size:13px;color:var(--mute)}
+.split{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--card2);margin:14px 0 12px}
+.split i{height:100%;width:0;transition:width .9s var(--ease)}
+.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+.mrow div{background:var(--card2);border-radius:14px;padding:10px 4px;font-size:12px;color:var(--mute)}
+.mrow b{display:block;font-family:var(--display);font-size:20px;color:var(--ink)}
+.mrow i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.goal{display:flex;align-items:center;gap:10px;margin-top:16px;font-size:14px;color:var(--mute)}
+.goal input{width:92px;padding:8px 10px;text-align:right}
+.needs{margin-top:24px}
+.needs .row{margin-bottom:10px}
+.seg{display:flex;background:var(--card2);border-radius:14px;padding:4px;border:1.5px solid var(--line)}
+.seg button{flex:1;padding:9px;border-radius:10px;font-weight:600;color:var(--mute);transition:all .3s}
+.seg button.on{background:var(--lime);color:var(--lime-ink)}
+#needOut{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:6px;padding:14px 16px;border-radius:16px;background:var(--card2)}
+#needOut b{font-family:var(--display);font-size:30px}
+
+/* ---------- fab / toast ---------- */
+#fab{position:fixed;right:22px;bottom:22px;z-index:90;display:flex;align-items:center;gap:10px;padding:13px 20px;border-radius:99px;background:var(--ink);color:var(--bg);font-weight:700;box-shadow:var(--shadow);transform:translateY(120px);transition:transform .6s var(--spring)}
+#fab.show{transform:none}
+#fab.bump{animation:bump .5s var(--spring)}
+@keyframes bump{40%{transform:scale(1.18) rotate(-4deg)}}
+#toast{position:fixed;left:50%;bottom:28px;z-index:150;transform:translate(-50%,100px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:99px;font-weight:600;font-size:14.5px;transition:transform .5s var(--spring);pointer-events:none}
+#toast.show{transform:translate(-50%,0)}
+
+/* ---------- modals ---------- */
+.modal{position:fixed;inset:0;z-index:160;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
+.modal.open{opacity:1;visibility:visible}
+.sheet{width:min(100%,var(--w,440px));max-height:92vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:30px;box-shadow:0 40px 100px -20px rgba(0,0,0,.8);transform:translateY(40px) scale(.9);transition:transform .5s var(--spring);position:relative}
+.modal.open .sheet{transform:none}
+.close{position:absolute;top:14px;right:14px;z-index:5;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:18px;backdrop-filter:blur(8px);transition:transform .4s var(--spring)}
+.close:hover{transform:rotate(90deg) scale(1.1)}
+.det{display:grid;grid-template-columns:1fr 1fr}
+.det .pic{position:relative;min-height:380px;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 60%,var(--card)),var(--card));display:grid;place-items:center;font-size:120px;overflow:hidden}
+.det .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:zoom 14s ease-in-out infinite alternate}
+@keyframes zoom{to{transform:scale(1.15)}}
+.det .info{padding:30px;display:flex;flex-direction:column;gap:14px}
+.det h3{font-size:38px;font-weight:800}
+.det .big{font-family:var(--display);font-size:60px;font-weight:800;line-height:1;color:var(--lime)}
+.det .big small{font:600 15px var(--body);color:var(--mute);margin-left:6px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;background:var(--card2);outline:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--lime);border:4px solid var(--card);box-shadow:0 0 0 1px var(--lime);cursor:grab;transition:transform .2s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--lime);border:4px solid var(--card)}
+.bar{display:grid;grid-template-columns:64px 1fr 54px;gap:10px;align-items:center;font-size:13.5px;color:var(--mute)}
+.bar div{height:8px;border-radius:99px;background:var(--card2);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:99px;transition:width .8s var(--ease)}
+.bar b{color:var(--ink);text-align:right}
+.auth{padding:34px}
+.auth .ico{font-size:46px;display:inline-block;animation:sway 3s ease-in-out infinite}
+.auth h3{font-size:32px;margin:8px 0 6px}
+.auth p{color:var(--mute);font-size:14.5px;margin-bottom:20px}
+.auth .field{margin-bottom:12px}
+.auth .btn{width:100%;margin-top:8px;padding:14px}
+.auth .note{font-size:12.5px;margin:14px 0 0;text-align:center}
+.shake{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.confetti{position:fixed;top:-40px;z-index:300;font-size:26px;pointer-events:none}
+.fly{position:fixed;z-index:300;font-size:30px;pointer-events:none}
+
+footer{padding:50px 0;color:var(--mute);font-size:14px}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+footer a{color:inherit}
+
+@media (max-width:900px){
+  .hero .wrap,.calc,.det{grid-template-columns:1fr}
+  .orbit{width:min(78vw,380px);order:-1}
+  .hero{padding-top:100px}
+  .links a,.float{display:none}
+  .logo{white-space:nowrap;font-size:18px}
+  nav .wrap{gap:10px}
+  .sum{position:static}
+  .det .pic{min-height:230px}
+  .stats{gap:22px}.stats b{font-size:30px}
+  section{padding:70px 0}
+  .pl{grid-template-columns:40px 1fr 74px 62px 30px;gap:6px}
+  .filters select{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div id="loader"><div><span>🍓</span><span>🥦</span><span>🍊</span><span>🥕</span></div></div>
+<div id="progress"></div>
+
+<nav id="nav"><div class="wrap">
+  <a class="logo" href="#top"><i>🥝</i>Harvest Table</a>
+  <div class="links"><a href="#guide">Guide</a><a href="#calc">Calculator</a><a href="#needs">Daily needs</a></div>
+  <button class="icon-btn" id="themeBtn" aria-label="Switch theme">🌙</button>
+  <button class="btn" id="loginBtn">Log in</button>
+</div></nav>
+
+<header class="hero" id="top">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div id="spot"></div>
+  <div class="wrap">
+    <div>
+      <span class="pill"><b></b><span id="pillTxt">Fresh data, per 100 g</span></span>
+      <h1 id="h1" aria-label="Know what's on your plate."></h1>
+      <p class="lead">Real photos, calories and full nutrition for <span data-total>130</span>+ fruits and vegetables. Search anything, tap a card, and build your plate in the calorie calculator.</p>
+      <div class="cta"><a class="btn big" href="#guide">Explore the produce →</a><a class="btn big ghost" href="#calc">Open calculator</a></div>
+      <div class="stats">
+        <div><b data-count="fruits">0</b><span>Fruits</span></div>
+        <div><b data-count="veg">0</b><span>Vegetables</span></div>
+        <div><b data-count="rare">0</b><span>Rare finds</span></div>
+      </div>
+    </div>
+    <div class="orbit" id="orbit">
+      <div class="ring" id="ring1"></div><div class="ring r2" id="ring2"></div>
+      <div class="core" id="core"><span>🍉</span></div>
+    </div>
+  </div>
+  <div class="scrolldown"></div>
+</header>
+
+<div class="marquee"><div id="marquee"></div></div>
+
+<section id="guide"><div class="wrap">
+  <div class="head reveal">
+    <div><span class="eyebrow">The guide</span><h2>Pick your produce</h2></div>
+    <p class="sub">All values are approximate and per 100 g of the raw, edible part. Tap any card for a closer look, or add it straight to your plate.</p>
+  </div>
+  <div class="toolbar">
+    <div class="search" id="searchBox">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+      <input id="q" type="search" placeholder="Search apple, kale, smoothie, salad…" autocomplete="off" aria-label="Search fruits and vegetables">
+      <kbd>/</kbd><button class="clear" id="clearQ">Clear</button>
+    </div>
+    <div class="filters" id="filters">
+      <button class="chip on" data-f="all">All</button>
+      <button class="chip" data-f="f">🍎 Fruits</button>
+      <button class="chip" data-f="v">🥦 Vegetables</button>
+      <button class="chip" data-f="rare">★ Rare</button>
+      <button class="chip" data-f="low">Under 40 kcal</button>
+      <button class="chip" data-f="fav">♥ Favorites</button>
+      <span id="count"></span>
+      <select id="sort" aria-label="Sort">
+        <option value="az">Sort: A to Z</option><option value="lo">Fewest calories</option><option value="hi">Most calories</option>
+        <option value="pro">Most protein</option><option value="fib">Most fiber</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</div></section>
+
+<section id="calc"><div class="wrap">
+  <div class="head reveal">
+    <div><span class="eyebrow">Calorie calculator</span><h2>Build your plate</h2></div>
+    <p class="sub">Pick anything from the guide, set the weight in grams, and watch the totals add up against your daily goal.</p>
+  </div>
+  <div class="calc">
+    <div class="panel reveal">
+      <h3>What are you eating?</h3>
+      <div class="row">
+        <div class="field" style="flex:2"><label for="pick">Fruit or vegetable</label>
+          <input class="inp" id="pick" placeholder="Start typing…" autocomplete="off"><div id="pickList"></div></div>
+        <div class="field" style="max-width:130px"><label for="grams">Grams</label><input class="inp" id="grams" type="number" min="1" max="5000" value="100"></div>
+        <div class="field" style="flex:none;min-width:0;align-self:end"><button class="btn" id="addBtn" style="padding:14px 22px">Add</button></div>
+      </div>
+      <div class="quick" id="quick"><button data-g="50">50 g</button><button data-g="100">100 g</button><button data-g="150">150 g</button><button data-g="250">250 g</button><button data-g="500">500 g</button></div>
+      <div id="plate"></div>
+      <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn ghost" id="clearPlate">Clear plate</button></div>
+
+      <div class="needs" id="needs">
+        <h3>Daily calorie needs</h3>
+        <div class="row">
+          <div class="field"><label>Sex</label><div class="seg" id="sex"><button class="on" data-v="m">Male</button><button data-v="f">Female</button></div></div>
+          <div class="field"><label for="age">Age</label><input class="inp" id="age" type="number" value="20" min="10" max="100"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="hgt">Height (cm)</label><input class="inp" id="hgt" type="number" value="170" min="100" max="230"></div>
+          <div class="field"><label for="wgt">Weight (kg)</label><input class="inp" id="wgt" type="number" value="65" min="25" max="250"></div>
+          <div class="field"><label for="act">Activity</label><select class="inp" id="act">
+            <option value="1.2">Mostly sitting</option><option value="1.375">Light exercise</option><option value="1.55" selected>Moderate exercise</option><option value="1.725">Very active</option></select></div>
+        </div>
+        <div id="needOut"><div><small style="color:var(--mute)">Estimated to maintain weight</small><br><b id="needVal">0</b> kcal / day</div><button class="btn" id="useNeed">Use as my goal</button></div>
+      </div>
+    </div>
+
+    <div class="panel sum reveal">
+      <h3>Your plate</h3>
+      <div class="ringbox">
+        <svg viewBox="0 0 120 120"><defs><linearGradient id="rg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="120" y2="120"><stop offset="0" stop-color="#b9f56b"/><stop offset=".5" stop-color="#ff9a3d"/><stop offset="1" stop-color="#ff5f8f"/></linearGradient></defs>
+          <circle class="tr" cx="60" cy="60" r="54"/><circle class="fg" id="ringFg" cx="60" cy="60" r="54"/></svg>
+        <div class="mid"><b id="tK">0</b><span>kcal · <span id="tPct">0</span>% of goal</span></div>
+      </div>
+      <div class="split"><i id="sC" style="background:var(--orange)"></i><i id="sP" style="background:var(--sky)"></i><i id="sF" style="background:var(--pink)"></i></div>
+      <div class="mrow">
+        <div><b id="tC">0</b><i style="background:var(--orange)"></i>Carbs g</div>
+        <div><b id="tP">0</b><i style="background:var(--sky)"></i>Protein g</div>
+        <div><b id="tF">0</b><i style="background:var(--pink)"></i>Fat g</div>
+        <div><b id="tFi">0</b><i style="background:var(--lime)"></i>Fiber g</div>
+      </div>
+      <div class="goal">Daily goal <input class="inp" id="goal" type="number" min="500" max="8000" step="50"> kcal</div>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <span class="logo"><i>🥝</i>Harvest Table</span>
+  <span>Nutrition values are approximate. Photos load from <a href="https://www.wikipedia.org" target="_blank" rel="noopener">Wikipedia</a> / Wikimedia Commons.</span>
+</div></footer>
+
+<button id="fab"><span>🍽️</span><span><span id="fabK">0</span> kcal</span></button>
+<div id="toast"></div>
+
+<div class="modal" id="detail"><div class="sheet" style="--w:860px"><button class="close" data-close>✕</button><div class="det" id="detBody"></div></div></div>
+
+<div class="modal" id="auth"><div class="sheet"><button class="close" data-close>✕</button>
+  <form class="auth" id="authForm" novalidate>
+    <span class="ico">🧺</span><h3>Welcome back</h3><p>Log in to keep your favorites and your plate.</p>
+    <div class="field"><label for="aName">Name</label><input class="inp" id="aName" autocomplete="given-name" placeholder="Your name"></div>
+    <div class="field"><label for="aMail">Email</label><input class="inp" id="aMail" type="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div class="field"><label for="aPass">Password</label><input class="inp" id="aPass" type="password" autocomplete="off" placeholder="At least 4 characters"></div>
+    <button class="btn" type="submit">Log in</button>
+    <p class="note">Demo login: only your name is saved, and only in this browser.</p>
+  </form>
+  <div class="auth" id="authUser" hidden>
+    <span class="ico">👋</span><h3 id="hiName">Hi!</h3><p>You are logged in. Your favorites and plate are saved on this device.</p>
+    <button class="btn ghost" id="logoutBtn">Log out</button>
+  </div>
+</div></div>
+
+<script>
+/* name|type|kcal|carbs|protein|fat|fiber|emoji|rare|description|uses|wikipedia title */
+const RAW=`
+Ackee|f|151|0.8|2.9|15.2|2.7||1|Jamaica's national fruit. Only eaten ripe and cooked.|Saltfish,Breakfast|
+Apple|f|52|13.8|0.3|0.2|2.4|🍎||Crisp, sweet and a little tart.|Snack,Pie,Juice|
+Apricot|f|48|11.1|1.4|0.4|2|||Velvety skin, soft and gently tangy.|Jam,Snack,Tart|
+Avocado|f|160|8.5|2|14.7|6.7|🥑||Creamy and rich in healthy fats.|Toast,Guacamole,Salad|
+Banana|f|89|22.8|1.1|0.3|2.6|🍌||Soft, sweet and easy to carry.|Smoothie,Baking,Pancakes|
+Blackberry|f|43|9.6|1.4|0.5|5.3|||Deep purple, juicy and full of fiber.|Jam,Crumble,Yogurt|
+Blackcurrant|f|63|15.4|1.4|0.4|4.3||1|Sharp little berries packed with vitamin C.|Cordial,Jam,Sorbet|
+Blueberry|f|57|14.5|0.7|0.3|2.4|🫐||Tiny, sweet and rich in antioxidants.|Muffins,Oatmeal,Jam|
+Breadfruit|f|103|27.1|1.1|0.2|4.9||1|Starchy tropical fruit that bakes like bread.|Roasting,Chips,Curry|
+Cantaloupe|f|34|8.2|0.8|0.2|0.9|🍈||Orange melon, fragrant and refreshing.|Snack,Salad,Smoothie|
+Cherimoya|f|75|17.7|1.6|0.7|3||1|Custard-like flesh, the ice-cream fruit.|Dessert,Smoothie|
+Cherry|f|63|16|1.1|0.2|2.1|🍒||Glossy, sweet and tart.|Snack,Pie,Jam|
+Clementine|f|47|12|0.9|0.2|1.7|🍊||Easy to peel, seedless and sweet.|Snack,Salad,Dessert|
+Coconut|f|354|15.2|3.3|33.5|9|🥥||Chewy white flesh, very rich.|Curry,Dessert,Milk|
+Cranberry|f|46|12|0.5|0.1|3.6|||Bright red and mouth-puckeringly tart.|Sauce,Juice,Baking|
+Date|f|277|75|1.8|0.2|6.7|||Sticky, caramel-sweet energy bites.|Snack,Baking,Smoothie|Medjool
+Dragon fruit|f|60|13|1.2|0|3||1|Mild speckled flesh, like a gentle kiwi.|Smoothie bowl,Snack|Pitaya
+Durian|f|147|27.1|1.5|5.3|3.8||1|Famous smell, custardy flesh.|Dessert,Ice cream|
+Elderberry|f|73|18.4|0.7|0.5|7||1|Dark berries, always cooked before eating.|Syrup,Jam,Tea|Sambucus
+Feijoa|f|61|15.2|0.7|0.4|6.4||1|Perfumed green fruit, pineapple meets mint.|Snack,Smoothie,Jam|Feijoa sellowiana
+Fig|f|74|19.2|0.8|0.3|2.9|||Honey-sweet with soft, seedy flesh.|Snack,Jam,Cheese boards|
+Gooseberry|f|44|10.2|0.9|0.6|4.3||1|Tart, translucent green berries.|Crumble,Jam,Fool|
+Grapefruit|f|42|10.7|0.8|0.1|1.6|||Big, juicy and pleasantly bitter.|Breakfast,Juice,Salad|
+Grapes|f|69|18.1|0.7|0.2|0.9|🍇||Small, sweet and juicy.|Snack,Juice,Raisins|Grape
+Guava|f|68|14.3|2.6|1|5.4||1|Very fragrant, pear-and-strawberry flavor.|Juice,Jam,Snack|
+Honeydew|f|36|9.1|0.5|0.1|0.8|🍈||Pale green melon, cool and sweet.|Snack,Salad,Sorbet|Honeydew (melon)
+Jabuticaba|f|58|15.3|0.6|0.1|2.3||1|Brazilian fruit that grows right on the trunk.|Snack,Jam,Wine|
+Jackfruit|f|95|23.2|1.7|0.6|1.5||1|Huge. Sweet when ripe, meaty when young.|Curry,Vegan dishes|
+Kiwano|f|44|7.6|1.8|1.3|0.5||1|Horned melon with lime-green jelly inside.|Garnish,Smoothie|Cucumis metuliferus
+Kiwi|f|61|14.7|1.1|0.5|3|🥝||Tangy green flesh with tiny seeds.|Snack,Smoothie,Salad|Kiwifruit
+Kumquat|f|71|15.9|1.9|0.9|6.5||1|Tiny citrus you eat whole, peel and all.|Snack,Marmalade|
+Lemon|f|29|9.3|1.1|0.3|2.8|🍋||Bright, sour and endlessly useful.|Dressing,Baking,Drinks|
+Lime|f|30|10.5|0.7|0.2|2.8|🍋||Sharp, zesty and aromatic.|Drinks,Tacos,Curry|Lime (fruit)
+Longan|f|60|15.1|1.3|0.1|1.1||1|Dragon's eye: juicy, musky and sweet.|Snack,Dessert,Tea|
+Loquat|f|47|12.1|0.4|0.2|1.7||1|Small golden fruit, apricot meets citrus.|Snack,Jam|
+Lychee|f|66|16.5|0.8|0.4|1.3||1|Floral and sweet with a pearly center.|Snack,Dessert,Drinks|
+Mango|f|60|15|0.8|0.4|1.6|🥭||Rich, sweet and tropical.|Smoothie,Chutney,Salsa|
+Mangosteen|f|73|18|0.4|0.6|1.8||1|Sweet white segments in a purple shell.|Snack,Juice|
+Mulberry|f|43|9.8|1.4|0.4|1.7||1|Soft, staining berries from a tree.|Jam,Pie,Snack|Morus (plant)
+Nectarine|f|44|10.6|1.1|0.3|1.7|||A smooth-skinned peach.|Snack,Grilling,Salad|
+Olive|f|115|6.3|0.8|10.7|3.2|🫒||Salty, briny and full of good fats.|Salad,Tapenade,Pizza|
+Orange|f|47|11.8|0.9|0.1|2.4|🍊||Juicy with a bright citrus tang.|Juice,Snack,Marmalade|Orange (fruit)
+Papaya|f|43|10.8|0.5|0.3|1.7|||Soft orange flesh, buttery and mild.|Breakfast,Smoothie,Salad|
+Passion fruit|f|97|23.4|2.2|0.7|10.4||1|Tart aromatic pulp with crunchy seeds.|Juice,Dessert,Yogurt|Passiflora edulis
+Peach|f|39|9.5|0.9|0.3|1.5|🍑||Soft, juicy and fragrant.|Dessert,Grilling,Jam|
+Pear|f|57|15.2|0.4|0.1|3.1|🍐||Buttery, grainy and sweet.|Snack,Poaching,Salad|
+Persimmon|f|70|18.6|0.6|0.2|3.6||1|Honey-sweet when fully ripe.|Snack,Baking,Salad|
+Pineapple|f|50|13.1|0.5|0.1|1.4|🍍||Sweet, tangy and juicy.|Grilling,Juice,Curry|
+Plantain|f|122|31.9|1.3|0.4|2.3||1|Starchy cousin of the banana, always cooked.|Frying,Chips,Stew|Cooking banana
+Plum|f|46|11.4|0.7|0.3|1.4|||Juicy with a sweet-sour skin.|Snack,Jam,Crumble|
+Pomegranate|f|83|18.7|1.7|1.2|4|||Ruby seeds that pop with tart juice.|Salad,Juice,Garnish|
+Pomelo|f|38|9.6|0.8|0|1||1|The giant, mild ancestor of grapefruit.|Snack,Salad|
+Prickly pear|f|41|9.6|0.7|0.5|3.6||1|Cactus fruit, melon-sweet and seedy.|Juice,Sorbet,Snack|Opuntia ficus-indica
+Quince|f|57|15.3|0.4|0.1|1.9||1|Hard and floral, turns pink when cooked.|Paste,Jam,Poaching|
+Rambutan|f|82|20.9|0.7|0.2|0.9||1|Hairy red shell, grape-like inside.|Snack,Dessert|
+Raspberry|f|52|11.9|1.2|0.7|6.5|||Delicate, bright and tangy.|Dessert,Jam,Yogurt|
+Soursop|f|66|16.8|1|0.3|3.3||1|Spiky, creamy, strawberry-pineapple taste.|Juice,Ice cream|
+Starfruit|f|31|6.7|1|0.3|2.8||1|Slices into perfect little stars.|Garnish,Salad,Juice|Carambola
+Strawberry|f|32|7.7|0.7|0.3|2|🍓||Bright, juicy and sweet.|Dessert,Smoothie,Jam|
+Tamarind|f|239|62.5|2.8|0.6|5.1||1|Sticky sweet-sour pulp from a pod.|Sauce,Chutney,Drinks|
+Watermelon|f|30|7.6|0.6|0.2|0.4|🍉||Mostly water, pure summer.|Snack,Juice,Salad|
+Acorn squash|v|40|10.4|0.8|0.1|1.5|||Ribbed winter squash, nutty and sweet.|Roasting,Stuffing,Soup|
+Artichoke|v|47|10.5|3.3|0.2|5.4||1|Tender hearts inside spiky leaves.|Steaming,Dips,Pasta|
+Arugula|v|25|3.7|2.6|0.7|1.6|||Peppery salad leaves.|Salad,Pizza,Pesto|Eruca vesicaria
+Asparagus|v|20|3.9|2.2|0.1|2.1|||Tender spring spears.|Grilling,Steaming,Omelette|
+Bamboo shoots|v|27|5.2|2.6|0.3|2.2||1|Mild, crunchy young bamboo.|Stir-fry,Soup,Curry|Bamboo shoot
+Beetroot|v|43|9.6|1.6|0.2|2.8|||Deep, sweet, turns everything pink.|Salad,Roasting,Juice|
+Bell pepper|v|31|6|1|0.3|2.1|🫑||Juicy and sweet when ripe.|Salad,Stuffing,Stir-fry|
+Bitter melon|v|17|3.7|1|0.2|2.8||1|Bumpy and very bitter, loved in Asia.|Stir-fry,Soup|Momordica charantia
+Bok choy|v|13|2.2|1.5|0.2|1|||Crisp white stems, soft green leaves.|Stir-fry,Soup,Steaming|
+Broccoli|v|34|6.6|2.8|0.4|2.6|🥦||Mild, earthy little trees.|Steaming,Stir-fry,Soup|
+Brussels sprouts|v|43|9|3.4|0.3|3.8|||Mini cabbages, sweet when roasted.|Roasting,Sauté,Salad|Brussels sprout
+Burdock root|v|72|17.3|1.5|0.2|3.3||1|Earthy, crunchy root popular in Japan.|Stir-fry,Soup,Tea|Arctium lappa
+Butternut squash|v|45|11.7|1|0.1|2|||Sweet, nutty orange flesh.|Soup,Roasting,Risotto|
+Cabbage|v|25|5.8|1.3|0.1|2.5|||Crunchy, cheap and keeps for weeks.|Slaw,Stir-fry,Soup|
+Carrot|v|41|9.6|0.9|0.2|2.8|🥕||Crunchy and sweet.|Snack,Soup,Juice,Cake|
+Cassava|v|160|38.1|1.4|0.3|1.8||1|Starchy staple root. Must be cooked well.|Frying,Flour,Boiling|
+Cauliflower|v|25|5|1.9|0.3|2|||Mild and very versatile.|Roasting,Rice swap,Soup|
+Celeriac|v|42|9.2|1.5|0.3|1.8||1|Knobby root with mellow celery flavor.|Mash,Soup,Roasting|
+Celery|v|14|3|0.7|0.2|1.6|||Crunchy, watery and fresh.|Snack,Soup,Salad|
+Chard|v|19|3.7|1.8|0.2|1.6|||Big leaves on rainbow stems.|Sauté,Soup,Gratin|
+Chayote|v|19|4.5|0.8|0.1|1.7||1|Mild, pear-shaped squash.|Salad,Soup,Stir-fry|
+Chili pepper|v|40|8.8|1.9|0.4|1.5|🌶️||Small and fiery.|Salsa,Curry,Sauce|
+Collard greens|v|32|5.4|3|0.6|4|||Sturdy leaves that love slow cooking.|Braising,Wraps,Soup|Collard (plant)
+Corn|v|86|19|3.2|1.2|2.7|🌽||Sweet and juicy kernels.|Grilling,Soup,Salad|Sweet corn
+Cucumber|v|15|3.6|0.7|0.1|0.5|🥒||Cool, crisp and watery.|Salad,Pickles,Dips|
+Daikon|v|18|4.1|0.6|0.1|1.6||1|Large white radish, crisp and mild.|Pickles,Soup,Salad|
+Edamame|v|121|8.9|11.9|5.2|5.2|🫛||Young soybeans, a protein star.|Snack,Salad,Rice bowls|
+Eggplant|v|25|5.9|1|0.2|3|🍆||Creamy once cooked.|Grilling,Dips,Stew|
+Endive|v|17|3.4|1.3|0.2|3.1||1|Crisp, pale leaves with gentle bitterness.|Salad,Braising,Boats|
+Fennel|v|31|7.3|1.2|0.2|3.1||1|Crisp bulb with a soft anise flavor.|Salad,Roasting,Soup|
+Fiddleheads|v|34|5.5|4.6|0.4|1||1|Curled spring fern shoots. Cook well.|Sauté,Steaming|Fiddlehead
+Garlic|v|149|33.1|6.4|0.5|2.1|🧄||Strong flavor, used in small amounts.|Sauce,Roasting,Marinade|
+Ginger|v|80|17.8|1.8|0.8|2|🫚||Warm, spicy and zingy root.|Tea,Stir-fry,Baking|
+Green beans|v|31|7|1.8|0.2|2.7|||Snappy pods, eaten whole.|Steaming,Stir-fry,Salad|Green bean
+Green peas|v|81|14.5|5.4|0.4|5.7|🫛||Small, sweet and tender.|Soup,Rice dishes,Side|Pea
+Horseradish|v|48|11.3|1.2|0.7|3.3||1|Nose-tingling hot root.|Sauce,Dressing|
+Jicama|v|38|8.8|0.7|0.1|4.9||1|Crunchy root, like apple meets potato.|Salad,Snack,Slaw|Pachyrhizus erosus
+Kabocha|v|34|8.6|1.2|0.1|1.2||1|Japanese pumpkin with fluffy sweet flesh.|Roasting,Tempura,Soup|
+Kale|v|35|4.4|2.9|1.5|4.1|🥬||Sturdy, earthy leaves.|Salad,Chips,Soup|
+Kohlrabi|v|27|6.2|1.7|0.1|3.6||1|Crunchy bulb, like a sweet broccoli stem.|Slaw,Roasting,Snack|
+Leek|v|61|14.2|1.5|0.3|1.8|||A gentle, sweet onion relative.|Soup,Quiche,Braising|
+Lettuce|v|15|2.9|1.4|0.2|1.3|🥬||Light, crisp salad base.|Salad,Wraps,Burgers|
+Lotus root|v|74|17.2|2.6|0.1|4.9||1|Lacy holes inside, stays crunchy.|Stir-fry,Soup,Chips|Nelumbo nucifera
+Mushroom|v|22|3.3|3.1|0.3|1|🍄||Savory and meaty (a fungus, honestly).|Sauté,Pizza,Soup|Agaricus bisporus
+Nopal|v|16|3.3|1.3|0.1|2.2||1|Cactus paddles, tender and tangy.|Tacos,Salad,Grilling|
+Okra|v|33|7.5|1.9|0.2|3.2||1|Green pods that thicken stews.|Stew,Frying,Pickles|
+Onion|v|40|9.3|1.1|0.1|1.7|🧅||The base of almost every savory dish.|Soup,Sauce,Frying|
+Parsnip|v|75|18|1.2|0.3|4.9|||Sweet, creamy winter root.|Roasting,Mash,Soup|
+Potato|v|77|17.5|2|0.1|2.2|🥔||Filling and endlessly flexible.|Mash,Roasting,Fries|
+Pumpkin|v|26|6.5|1|0.1|0.5|🎃||Mild, sweet autumn classic.|Soup,Pie,Roasting|
+Radicchio|v|23|4.5|1.4|0.3|0.9||1|Purple leaves with a bitter bite.|Salad,Grilling,Risotto|
+Radish|v|16|3.4|0.7|0.1|1.6|||Peppery pink crunch.|Salad,Pickles,Snack|
+Red cabbage|v|31|7.4|1.4|0.2|2.1|||Purple, crunchy and slightly peppery.|Slaw,Braising,Pickles|
+Rhubarb|v|21|4.5|0.9|0.2|1.8|||Sour pink stalks, cooked with sugar.|Crumble,Jam,Pie|
+Romanesco|v|25|4.5|2.5|0.3|2.5||1|Spiraling fractal cousin of cauliflower.|Roasting,Pasta,Steaming|Romanesco broccoli
+Rutabaga|v|38|8.6|1.1|0.2|2.3||1|Sweet-earthy cross of turnip and cabbage.|Mash,Stew,Roasting|
+Shallot|v|72|16.8|2.5|0.1|3.2|||A small, mild and sweet onion.|Dressing,Sauce,Frying|
+Snow peas|v|42|7.6|2.8|0.2|2.6|||Flat, crisp pods eaten whole.|Stir-fry,Salad,Snack|Snow pea
+Spaghetti squash|v|31|6.9|0.6|0.6|1.5||1|Flesh pulls apart into noodle strands.|Pasta swap,Baking|
+Spinach|v|23|3.6|2.9|0.4|2.2|🥬||Soft leaves, mild and iron-rich.|Salad,Smoothie,Sauté|
+Spring onion|v|32|7.3|1.8|0.2|2.6|||Fresh, mild and green.|Garnish,Stir-fry,Salad|Scallion
+Sweet potato|v|86|20.1|1.6|0.1|3|🍠||Soft, orange and naturally sweet.|Baking,Fries,Mash|
+Taro|v|112|26.5|1.5|0.2|4.1||1|Nutty, starchy root with purple flecks.|Chips,Stew,Dessert|
+Tomato|v|18|3.9|0.9|0.2|1.2|🍅||Juicy and bright (technically a fruit).|Salad,Sauce,Soup|
+Turnip|v|28|6.4|0.9|0.1|1.8|||Mild, slightly peppery root.|Roasting,Stew,Mash|
+Watercress|v|11|1.3|2.3|0.1|0.5|||Peppery leaves, one of the lightest foods.|Salad,Soup,Sandwich|
+Yam|v|118|27.9|1.5|0.2|4.1||1|Dry, starchy tuber, a staple in West Africa.|Boiling,Pounding,Frying|Yam (vegetable)
+Zucchini|v|17|3.1|1.2|0.3|1|||Tender, mild summer squash.|Grilling,Noodles,Baking|
+`;
+const ITEMS=RAW.trim().split("\n").map((l,i)=>{const p=l.split("|");return{i,n:p[0],t:p[1],k:+p[2],c:+p[3],p:+p[4],f:+p[5],fi:+p[6],e:p[7]||(p[1]=="f"?"🍑":"🌿"),r:p[8]=="1",d:p[9],u:p[10].split(","),w:p[11]||p[0]}});
+const byName=Object.fromEntries(ITEMS.map(x=>[x.n,x]));
+
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const store={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const reduce=matchMedia("(prefers-reduced-motion:reduce)").matches;
+const hue=s=>{let h=0;for(const ch of s)h=(h*31+ch.charCodeAt(0))%360;return h};
+const r1=n=>Math.round(n*10)/10;
+function tween(el,to,dec=0){const from=el._v||0,t0=performance.now(),id=el._t=(el._t||0)+1;el._v=to;
+  if(reduce){el.textContent=to.toFixed(dec);return}
+  (function f(t){if(el._t!==id)return;const k=Math.min(1,(t-t0)/600),e=1-Math.pow(1-k,3);el.textContent=(from+(to-from)*e).toFixed(dec);if(k<1)requestAnimationFrame(f)})(t0)}
+let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2200)}
+
+/* ---------- state ---------- */
+let favs=new Set(store.get("ht_favs",[])),plate=store.get("ht_plate",[]).filter(x=>byName[x.n]),goal=store.get("ht_goal",2000),user=store.get("ht_user",null);
+/* hand-picked Wikimedia Commons photos where the Wikipedia lead image is a drawing or a tree */
+const PHOTO={Asparagus:"Asparagus-Bundle.jpg",Papaya:"Papaya cross section BNC.jpg",Nectarine:"Nectarines 1.jpg",Mangosteen:"Mangosteen-opened.jpg",Quince:"Quince (10889s).jpg","Bitter melon":"Bitter gourd (Momordica charantia).jpg",Jicama:"Jicama-Jakarta.JPG",Parsnip:"Parsnips with greens.jpg",Spinach:"Fresh Spinach leaves.jpg",Cherimoya:"Cherimoya cut hg.jpg",Watermelon:"Slices of watermelon.jpg",Garlic:"Garlic bulbs and cloves.jpg",Kabocha:"Red Kabocha Squash.jpg","Lotus root":"Dried lotus root slices.jpg",Olive:"Fresh green olives and black olives served at a food display.jpg",Ginger:"Liat Portal for Foodie Disorder - Fresh ginger root from San Francisco farmers market.jpg"};
+let imgs=store.get("ht_imgs2",{});for(const k in PHOTO)imgs[k]="https://commons.wikimedia.org/wiki/Special:FilePath/"+encodeURIComponent(PHOTO[k])+"?width=500";
+let filter="all",query="",sort="az";
+
+/* ---------- hero ---------- */
+$("#h1").innerHTML=[["Know"],["what's"],["on"],["your"],["plate.",1]].map(([w,g],i)=>`<span class="w"><span class="${g?"grad":""}" style="animation-delay:${.25+i*.09}s">${w}</span></span>`).join(" ");
+const hero=$(".hero");
+[["🍓",49,52,44,7],["🥑",45,13,40,6],["🍋",1,91,40,8],["🫐",40,90,34,5.5],["🌶️",95,15,36,6.5],["🥕",95,86,42,7.5],["🍇",60,94,32,9]].forEach(([e,x,y,s,t],i)=>{
+  const d=document.createElement("div");d.className="float";d.style.cssText=`left:${x}%;top:${y}%;--s:${s}px;--t:${t}s;animation-delay:-${i}s`;d.innerHTML=`<i data-depth="${(i%3+1)*14}">${e}</i>`;hero.append(d)});
+hero.addEventListener("pointermove",e=>{const r=hero.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+  $("#spot").style.left=e.clientX-r.left+"px";$("#spot").style.top=e.clientY-r.top+"px";
+  $$(".float i").forEach(f=>f.style.transform=`translate(${-x*f.dataset.depth}px,${-y*f.dataset.depth}px)`);
+  $("#orbit").style.transform=`rotateY(${x*14}deg) rotateX(${-y*14}deg)`});
+$("#orbit").style.transition="transform .6s cubic-bezier(.2,.8,.2,1)";
+const ORB1=["Strawberry","Broccoli","Orange","Carrot","Blueberry","Tomato","Kiwi","Bell pepper"],ORB2=["Mango","Pomegranate","Avocado","Raspberry","Dragon fruit"];
+const bub=(n,a)=>`<div class="bub" style="--a:${a}deg"><div data-img="${n}"><span>${byName[n].e}</span></div></div>`;
+$("#ring1").innerHTML=ORB1.map((n,i)=>bub(n,i*360/ORB1.length)).join("");
+$("#ring2").innerHTML=ORB2.map((n,i)=>bub(n,i*360/ORB2.length)).join("");
+$("#core").dataset.img="Watermelon";
+const cnt={fruits:ITEMS.filter(x=>x.t=="f").length,veg:ITEMS.filter(x=>x.t=="v").length,rare:ITEMS.filter(x=>x.r).length};
+$$("[data-total]").forEach(e=>e.textContent=Math.floor(ITEMS.length/10)*10);
+$("#marquee").innerHTML=[0,1].map(()=>ITEMS.filter((_,i)=>i%3==0).map(x=>`<span>${x.e} ${x.n} <em>${x.k} kcal</em></span>`).join("")).join("");
+
+/* ---------- cards ---------- */
+const grid=$("#grid");
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{rootMargin:"0px 0px -40px 0px"});
+ITEMS.forEach(x=>{const el=document.createElement("article");el.className="card";el.dataset.i=x.i;el.style.setProperty("--c",`hsl(${hue(x.n)} 70% 50%)`);
+  el.innerHTML=`<div class="ci"><div class="ph"><span class="emo">${x.e}</span><img alt="${x.n}" loading="lazy" decoding="async">
+    <span class="tag-t">${x.t=="f"?"Fruit":"Vegetable"}</span>${x.r?'<span class="tag-r">★ Rare</span>':""}
+    <button class="fav${favs.has(x.n)?" on":""}" aria-label="Favorite ${x.n}">${favs.has(x.n)?"♥":"♡"}</button>
+    <div class="kc">${x.k}<small>kcal / 100 g</small></div></div>
+    <div class="cb"><h3>${x.n}</h3><p>${x.d}</p>
+    <div class="mac"><div><b>${x.c}</b>carbs</div><div><b>${x.p}</b>protein</div><div><b>${x.f}</b>fat</div><div><b>${x.fi}</b>fiber</div></div>
+    <div class="uses">${x.u.map(u=>`<span>${u}</span>`).join("")}</div>
+    <button class="add">+ Add to plate</button></div></div>`;
+  x.el=el;const im=$("img",el);im.onload=()=>im.classList.add("ld");im.onerror=()=>im.remove()});
+const emptyEl=Object.assign(document.createElement("div"),{className:"empty",innerHTML:"<div>🔍</div><h3 style='font-size:26px;margin:12px 0 6px;color:var(--ink)'>Nothing found</h3><p>Try a different word, like “berry”, “soup” or “salad”.</p>"});
+function render(){const q=query.trim().toLowerCase();
+  let list=ITEMS.filter(x=>(filter=="all"||(filter=="rare"?x.r:filter=="fav"?favs.has(x.n):filter=="low"?x.k<40:x.t==filter))&&(!q||(x.n+" "+x.d+" "+x.u.join(" ")+(x.t=="f"?" fruit":" vegetable veggie")).toLowerCase().includes(q)));
+  const s={az:(a,b)=>a.n.localeCompare(b.n),lo:(a,b)=>a.k-b.k,hi:(a,b)=>b.k-a.k,pro:(a,b)=>b.p-a.p,fib:(a,b)=>b.fi-a.fi}[sort];list.sort(s);
+  list.forEach((x,i)=>{x.el.classList.remove("in");x.el.style.setProperty("--d",Math.min(i,10)*45+"ms");io.observe(x.el)});
+  grid.replaceChildren(...(list.length?list.map(x=>x.el):[emptyEl]));
+  $("#count").textContent=`${list.length} of ${ITEMS.length}`}
+grid.addEventListener("click",e=>{const card=e.target.closest(".card");if(!card)return;const x=ITEMS[card.dataset.i];
+  if(e.target.closest(".fav")){const b=e.target.closest(".fav"),on=!favs.has(x.n);on?favs.add(x.n):favs.delete(x.n);store.set("ht_favs",[...favs]);
+    b.classList.toggle("on",on);b.textContent=on?"♥":"♡";if(on)burst(b,"♥");if(filter=="fav")render();return}
+  if(e.target.closest(".add")){const b=e.target.closest(".add");addToPlate(x.n,100,b);b.classList.add("ok");b.textContent="✓ Added 100 g";setTimeout(()=>{b.classList.remove("ok");b.textContent="+ Add to plate"},1300);return}
+  openDetail(x)});
+grid.addEventListener("pointermove",e=>{if(reduce||e.pointerType=="touch")return;const ci=e.target.closest(".ci");if(!ci)return;const r=ci.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+  ci.style.setProperty("--ry",(x-.5)*12+"deg");ci.style.setProperty("--rx",(.5-y)*12+"deg");ci.style.setProperty("--mx",x*100+"%");ci.style.setProperty("--my",y*100+"%")});
+grid.addEventListener("pointerout",e=>{const ci=e.target.closest(".ci");if(ci&&!ci.contains(e.relatedTarget)){ci.style.setProperty("--rx","0deg");ci.style.setProperty("--ry","0deg")}});
+function burst(el,ch){if(reduce)return;const r=el.getBoundingClientRect();for(let i=0;i<8;i++){const s=document.createElement("span");s.className="fly";s.textContent=ch;s.style.cssText=`left:${r.left+r.width/2-8}px;top:${r.top+r.height/2-12}px;font-size:16px;color:var(--pink)`;document.body.append(s);
+  const a=i/8*Math.PI*2;s.animate([{transform:"translate(0,0) scale(1)",opacity:1},{transform:`translate(${Math.cos(a)*60}px,${Math.sin(a)*60}px) scale(0)`,opacity:0}],{duration:650,easing:"cubic-bezier(.2,.8,.2,1)"}).onfinish=()=>s.remove()}}
+function flyTo(from,ch){if(reduce||!from)return;const a=from.getBoundingClientRect(),b=$("#fab").getBoundingClientRect(),s=document.createElement("span");s.className="fly";s.textContent=ch;s.style.cssText=`left:${a.left+a.width/2-15}px;top:${a.top-10}px`;document.body.append(s);
+  const dx=b.left+30-(a.left+a.width/2),dy=b.top-a.top;
+  s.animate([{transform:"translate(0,0) scale(1) rotate(0)"},{transform:`translate(${dx*.5}px,${Math.min(dy*.5,-40)-90}px) scale(1.6) rotate(180deg)`,offset:.5},{transform:`translate(${dx}px,${dy}px) scale(.3) rotate(360deg)`,opacity:.4}],{duration:800,easing:"cubic-bezier(.4,0,.2,1)"}).onfinish=()=>s.remove()}
+
+/* ---------- search & filters ---------- */
+const qEl=$("#q");
+qEl.addEventListener("input",()=>{query=qEl.value;$("#searchBox").classList.toggle("has",!!query);render()});
+$("#clearQ").onclick=()=>{qEl.value="";qEl.dispatchEvent(new Event("input"));qEl.focus()};
+addEventListener("keydown",e=>{if(e.key=="/"&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();$("#guide").scrollIntoView();qEl.focus()}
+  if(e.key=="Escape")$$(".modal.open").forEach(m=>m.classList.remove("open"))});
+$("#filters").addEventListener("click",e=>{const c=e.target.closest(".chip");if(!c)return;$$(".chip").forEach(x=>x.classList.toggle("on",x==c));filter=c.dataset.f;render()});
+$("#sort").onchange=e=>{sort=e.target.value;render()};
+
+/* ---------- photos (Wikipedia) ---------- */
+function setImg(host,src){if(!host||!src||$("img",host))return;const im=new Image();im.alt="";im.onload=()=>{im.classList.add("ld");const s=$("span",host);if(s)s.style.opacity=0};im.onerror=()=>im.remove();im.src=src;host.prepend(im)}
+function applyImgs(){ITEMS.forEach(x=>{const src=imgs[x.n];if(src){const im=$("img",x.el);if(im&&!im.getAttribute("src"))im.src=src}});
+  $$("[data-img]").forEach(h=>setImg(h,imgs[h.dataset.img]));if(plate.length)renderPlate()}
+async function loadImgs(){const need=ITEMS.filter(x=>!imgs[x.n]);
+  for(let i=0;i<need.length;i+=50){const chunk=need.slice(i,i+50);
+    try{const u="https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&origin=*&redirects=1&prop=pageimages&piprop=thumbnail&pithumbsize=500&pilimit=50&titles="+encodeURIComponent(chunk.map(x=>x.w).join("|"));
+      const j=(await (await fetch(u)).json()).query||{},map={};
+      [...(j.normalized||[]),...(j.redirects||[])].forEach(r=>map[r.from]=r.to);
+      const pages=Object.fromEntries((j.pages||[]).map(p=>[p.title,p.thumbnail&&p.thumbnail.source]));
+      chunk.forEach(x=>{let t=x.w,n=0;while(map[t]&&n++<5)t=map[t];if(pages[t])imgs[x.n]=pages[t]});
+      store.set("ht_imgs2",imgs);applyImgs()}catch(err){console.warn("Photo lookup failed",err)}}}
+
+/* ---------- detail modal ---------- */
+function openDetail(x){const b=$("#detBody");b.style.setProperty("--c",`hsl(${hue(x.n)} 70% 50%)`);
+  b.innerHTML=`<div class="pic"><span>${x.e}</span>${imgs[x.n]?`<img src="${imgs[x.n]}" alt="${x.n}">`:""}</div>
+  <div class="info"><span class="eyebrow">${x.t=="f"?"Fruit":"Vegetable"}${x.r?" · ★ Rare":""}</span><h3>${x.n}</h3><p style="color:var(--mute)">${x.d}</p>
+  <div class="big"><span id="dK">0</span><small>kcal in <span id="dG">100</span> g</small></div>
+  <input type="range" id="dR" min="10" max="500" step="10" value="100" aria-label="Grams">
+  <div>${[["Carbs","c","--orange",30],["Protein","p","--sky",12],["Fat","f","--pink",15],["Fiber","fi","--lime",10]].map(([l,k,c,m])=>`<div class="bar" style="margin-top:8px"><span>${l}</span><div><i data-k="${k}" data-m="${m}" style="background:var(${c})"></i></div><b data-v="${k}">0 g</b></div>`).join("")}</div>
+  <div class="uses">${x.u.map(u=>`<span>${u}</span>`).join("")}</div>
+  <button class="btn" id="dAdd" style="margin-top:auto">+ Add <span id="dG2">100</span> g to plate</button></div>`;
+  const upd=()=>{const g=+$("#dR").value,m=g/100;tween($("#dK"),x.k*m);$("#dG").textContent=$("#dG2").textContent=g;
+    $$("[data-k]",b).forEach(i=>i.style.width=Math.min(100,x[i.dataset.k]*m/i.dataset.m*100)+"%");$$("[data-v]",b).forEach(v=>v.textContent=r1(x[v.dataset.v]*m)+" g")};
+  $("#dR").oninput=upd;$("#dAdd").onclick=e=>{addToPlate(x.n,+$("#dR").value,e.currentTarget);$("#detail").classList.remove("open")};
+  $("#detail").classList.add("open");setTimeout(upd,120)}
+$$(".modal").forEach(m=>m.addEventListener("click",e=>{if(e.target==m||e.target.closest("[data-close]"))m.classList.remove("open")}));
+
+/* ---------- calculator ---------- */
+const pick=$("#pick"),pl=$("#pickList");let hi=0,matches=[];
+function showPick(){const q=pick.value.trim().toLowerCase();matches=ITEMS.filter(x=>x.n.toLowerCase().includes(q)).sort((a,b)=>a.n.toLowerCase().indexOf(q)-b.n.toLowerCase().indexOf(q)||a.n.localeCompare(b.n)).slice(0,q?8:ITEMS.length);hi=0;
+  pl.innerHTML=matches.map((x,i)=>`<button type="button" data-n="${x.n}" class="${i==0?"hi":""}"><span>${x.e}</span>${x.n}<small>${x.k} kcal</small></button>`).join("")||`<button type="button" disabled>No match</button>`;pl.classList.add("open")}
+pick.addEventListener("input",showPick);pick.addEventListener("focus",showPick);
+pick.addEventListener("keydown",e=>{if(e.key=="ArrowDown"||e.key=="ArrowUp"){e.preventDefault();hi=(hi+(e.key=="ArrowDown"?1:-1)+matches.length)%matches.length;$$("button",pl).forEach((b,i)=>{b.classList.toggle("hi",i==hi);if(i==hi)b.scrollIntoView({block:"nearest"})})}
+  if(e.key=="Enter"){e.preventDefault();if(matches[hi]&&pl.classList.contains("open")){pick.value=matches[hi].n;pl.classList.remove("open")}else $("#addBtn").click()}});
+pl.addEventListener("mousedown",e=>{const b=e.target.closest("[data-n]");if(b){e.preventDefault();pick.value=b.dataset.n;pl.classList.remove("open");$("#grams").focus()}});
+pick.addEventListener("blur",()=>pl.classList.remove("open"));
+$("#quick").onclick=e=>{if(e.target.dataset.g)$("#grams").value=e.target.dataset.g};
+$("#grams").addEventListener("keydown",e=>{if(e.key=="Enter")$("#addBtn").click()});
+$("#addBtn").onclick=e=>{const q=pick.value.trim().toLowerCase(),x=ITEMS.find(i=>i.n.toLowerCase()==q)||(q&&ITEMS.find(i=>i.n.toLowerCase().startsWith(q))),g=+$("#grams").value;
+  if(!x||!(g>0)){const f=(!x?pick:$("#grams"));f.classList.remove("shake");void f.offsetWidth;f.classList.add("shake");f.focus();return}
+  addToPlate(x.n,g,e.currentTarget);pick.value=""};
+function addToPlate(n,g,from){g=Math.min(5000,Math.round(g));const ex=plate.find(p=>p.n==n);ex?ex.g+=g:plate.push({n,g});savePlate(ex?null:n);flyTo(from,byName[n].e);
+  const fab=$("#fab");fab.classList.remove("bump");void fab.offsetWidth;fab.classList.add("bump");toast(`${byName[n].e} ${g} g of ${n.toLowerCase()} added`)}
+function savePlate(fresh){store.set("ht_plate",plate);renderPlate(fresh);totals()}
+function renderPlate(fresh){const box=$("#plate");
+  if(!plate.length){box.innerHTML=`<div class="noplate"><div>🍽️</div>Your plate is empty. Add something tasty.</div>`;return}
+  box.innerHTML=plate.map((p,i)=>{const x=byName[p.n];return`<div class="pl" data-i="${i}" ${p.n===fresh?"":'style="animation:none"'}><div class="th">${imgs[p.n]?`<img src="${imgs[p.n]}" alt="">`:x.e}</div>
+    <div><b>${p.n}</b><small>${x.k} kcal / 100 g</small></div><input type="number" min="1" max="5000" value="${p.g}" aria-label="Grams of ${p.n}">
+    <div class="k">${Math.round(x.k*p.g/100)}</div><button class="x" aria-label="Remove ${p.n}">✕</button></div>`}).join("")}
+$("#plate").addEventListener("input",e=>{const row=e.target.closest(".pl");if(!row)return;const p=plate[row.dataset.i];p.g=Math.max(0,Math.min(5000,+e.target.value||0));$(".k",row).textContent=Math.round(byName[p.n].k*p.g/100);store.set("ht_plate",plate);totals()});
+$("#plate").addEventListener("click",e=>{const b=e.target.closest(".x");if(!b)return;const row=b.closest(".pl");row.classList.add("out");setTimeout(()=>{plate.splice(row.dataset.i,1);savePlate()},reduce?0:280)});
+$("#clearPlate").onclick=()=>{if(plate.length){plate=[];savePlate();toast("Plate cleared")}};
+function totals(){const t={k:0,c:0,p:0,f:0,fi:0};plate.forEach(p=>{const x=byName[p.n],m=p.g/100;for(const k in t)t[k]+=x[k]*m});
+  tween($("#tK"),t.k);tween($("#fabK"),t.k);tween($("#tC"),t.c,1);tween($("#tP"),t.p,1);tween($("#tF"),t.f,1);tween($("#tFi"),t.fi,1);
+  const pct=goal?t.k/goal*100:0;tween($("#tPct"),pct);$("#ringFg").style.strokeDashoffset=339.3*(1-Math.min(1,pct/100));
+  const cc=t.c*4,pc=t.p*4,fc=t.f*9,s=cc+pc+fc||1;$("#sC").style.width=cc/s*100+"%";$("#sP").style.width=pc/s*100+"%";$("#sF").style.width=fc/s*100+"%";
+  $("#fab").classList.toggle("show",plate.length>0)}
+$("#goal").value=goal;$("#goal").oninput=e=>{goal=Math.max(0,+e.target.value||0);store.set("ht_goal",goal);totals()};
+$("#fab").onclick=()=>$("#calc").scrollIntoView();
+
+/* ---------- daily needs (Mifflin-St Jeor) ---------- */
+let sex="m";
+function needs(){const w=+$("#wgt").value,h=+$("#hgt").value,a=+$("#age").value;const v=Math.max(0,Math.round((10*w+6.25*h-5*a+(sex=="m"?5:-161))*+$("#act").value/10)*10);tween($("#needVal"),v);return v}
+$("#sex").onclick=e=>{if(e.target.dataset.v){sex=e.target.dataset.v;$$("#sex button").forEach(b=>b.classList.toggle("on",b==e.target));needs()}};
+["age","hgt","wgt","act"].forEach(id=>$("#"+id).addEventListener("input",needs));
+$("#useNeed").onclick=()=>{goal=needs();$("#goal").value=goal;store.set("ht_goal",goal);totals();toast(`Daily goal set to ${goal} kcal`);$(".sum").scrollIntoView({block:"center"})};
+
+/* ---------- login (demo, local only) ---------- */
+function paintUser(){const b=$("#loginBtn");b.textContent="";
+  if(user){const av=document.createElement("span");av.className="av";av.textContent=user.name[0].toUpperCase();b.append(av,document.createTextNode(user.name.split(" ")[0]));$("#hiName").textContent=`Hi, ${user.name}!`}
+  else b.textContent="Log in";$("#authForm").hidden=!!user;$("#authUser").hidden=!user}
+$("#loginBtn").onclick=()=>{$("#auth").classList.add("open");if(!user)setTimeout(()=>$("#aName").focus(),300)};
+$("#authForm").onsubmit=e=>{e.preventDefault();const n=$("#aName").value.trim(),m=$("#aMail").value.trim(),p=$("#aPass").value;
+  const bad=!n?$("#aName"):!/^\S+@\S+\.\S+$/.test(m)?$("#aMail"):p.length<4?$("#aPass"):null;
+  if(bad){bad.classList.remove("shake");void bad.offsetWidth;bad.classList.add("shake");bad.focus();return}
+  user={name:n.slice(0,30)};store.set("ht_user",user);$("#aPass").value="";paintUser();$("#auth").classList.remove("open");toast(`Welcome, ${user.name.split(" ")[0]}!`);confetti()};
+$("#logoutBtn").onclick=()=>{user=null;store.set("ht_user",null);paintUser();$("#auth").classList.remove("open");toast("Logged out")};
+function confetti(){if(reduce)return;const E=["🍓","🍊","🥝","🍇","🥕","🍋","🍒","🥦","🍍"];for(let i=0;i<34;i++){const s=document.createElement("span");s.className="confetti";s.textContent=E[i%E.length];s.style.left=Math.random()*100+"vw";document.body.append(s);
+  s.animate([{transform:"translateY(0) rotate(0)"},{transform:`translate(${(Math.random()-.5)*200}px,110vh) rotate(${(Math.random()-.5)*900}deg)`}],{duration:1600+Math.random()*1600,delay:Math.random()*500,easing:"cubic-bezier(.3,.1,.6,1)"}).onfinish=()=>s.remove()}}
+
+/* ---------- theme, scroll, reveal ---------- */
+function setTheme(t){document.documentElement.dataset.theme=t;$("#themeBtn").textContent=t=="dark"?"🌙":"☀️";store.set("ht_theme",t)}
+setTheme(store.get("ht_theme","dark"));$("#themeBtn").onclick=()=>setTheme(document.documentElement.dataset.theme=="dark"?"light":"dark");
+addEventListener("scroll",()=>{const h=document.documentElement;$("#progress").style.transform=`scaleX(${h.scrollTop/(h.scrollHeight-h.clientHeight||1)})`;$("#nav").classList.toggle("scrolled",h.scrollTop>20)},{passive:true});
+const ro=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");ro.unobserve(e.target)}}),{threshold:.12});$$(".reveal").forEach(e=>ro.observe(e));
+
+/* ---------- go ---------- */
+render();renderPlate();totals();needs();paintUser();applyImgs();loadImgs();
+const start=()=>{$("#loader").classList.add("done");setTimeout(()=>$$("[data-count]").forEach(e=>tween(e,cnt[e.dataset.count])),700)};
+document.readyState=="complete"?setTimeout(start,500):addEventListener("load",()=>setTimeout(start,500));setTimeout(start,2500);
+</script>
+</body>
+</html>
